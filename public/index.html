@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Spotify Downloader</title>
+  <style>
+    :root {
+      --primary: #1db954;
+      --light: #ffffff;
+      --dark: #121212;
+      --muted: #888;
+      --radius: 8px;
+      --transition: 0.3s ease;
+      font-size: 16px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: linear-gradient(135deg, #121212 0%, #282828 100%);
+      color: var(--light);
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .container {
+      background: #181818;
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
+      padding: 2rem;
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      background: #282828;
+      color: var(--light);
+      font-size: 1rem;
+      transition: background var(--transition);
+    }
+    input[type="text"]:focus {
+      background: #333;
+      outline: none;
+    }
+    button {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--primary);
+      color: var(--light);
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background var(--transition), transform var(--transition);
+    }
+    button:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    button:hover:not(:disabled) {
+      background: #17a44a;
+      transform: translateY(-2px);
+    }
+    #status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-height: 1.2em;
+    }
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .footer a {
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--muted);
+    }
+    .footer a:hover {
+      color: var(--light);
+      border-color: var(--light);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 Spotify Downloader</h1>
+
+    <div class="form-group">
+      <label for="urlInput">Spotify URL</label>
+      <input id="urlInput" type="text" placeholder="Track/Album/Playlist URL" />
+    </div>
+
+    <button id="downloadBtn">Download MP3</button>
+    <div id="status"></div>
+
+    <div class="footer">
+      Powered by <a href="https://github.com/spotDL/spotify-downloader" target="_blank">spotDL</a>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const btn    = document.getElementById('downloadBtn');
+    const input  = document.getElementById('urlInput');
+    const status = document.getElementById('status');
+
+    btn.addEventListener('click', async () => {
+      const url = input.value.trim();
+      if (!url) {
+        status.textContent = '❗ Please enter a Spotify URL.';
+        return;
+      }
+      status.textContent = '⏳ Downloading…';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`/download?url=${encodeURIComponent(url)}`);
+        if (!res.ok) throw new Error(await res.text());
+        const cd  = res.headers.get('Content-Disposition') || '';
+        const m   = cd.match(/filename="?(.+?)"?$/);
+        const fn  = m ? m[1] : 'download.zip';
+        const blob = await res.blob();
+        const a   = document.createElement('a');
+        a.href    = URL.createObjectURL(blob);
+        a.download= fn;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        status.textContent = '✅ Download complete!';
+      } catch (e) {
+        console.error(e);
+        status.textContent = '❌ Error: ' + e.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
